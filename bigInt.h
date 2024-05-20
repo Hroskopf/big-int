@@ -1,35 +1,57 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include <complex>
+#include <math.h>
 
 using namespace std;
+
+const double PI = acos(-1);
 
 class bigInt{
     private:
     vector<unsigned short>number;
     bool sign;
 
-    bigInt(vector<unsigned short>num, bool sgn = true)
-    {
+    bigInt(vector<unsigned short>num, bool sgn = true) {
         while(num.size() > 1 and num.back() == 0)
             num.pop_back();
         number = num;
         sign = sgn;
     }
 
-    bigInt multiple_by_ten_power(bigInt a, int n) const
-    {
-        if(a == 0)
-        return a;
-        auto b = a;
-        reverse(b.number.begin(), b.number.end());
-        for(int i=0;i<n;i++)
-        {
-            b.number.push_back(0);
+    vector<complex<double>> fft(vector<complex<double>> a, bool invert = false) const {
+        // from https://cp-algorithms.com/algebra/fft.html
+        int n = a.size();
+        if (n == 1)
+            return vector<complex<double>>(1, a[0]);
+
+        vector<complex<double>> a0(n / 2), a1(n / 2);
+        for (int i = 0; 2 * i < n; i++) {
+            a0[i] = a[2*i];
+            a1[i] = a[2*i+1];
         }
-        reverse(b.number.begin(), b.number.end());
-        return b;
+        auto f0 = fft(a0, invert);
+        auto f1 = fft(a1, invert);
+
+        vector<complex<double>>f(a.size());
+
+        double ang = 2 * PI / n * (invert ? -1 : 1);
+        complex<double> w(1), wn(cos(ang), sin(ang));
+        for (int i = 0; 2 * i < n; i++) 
+        {
+            f[i] = f0[i] + w * f1[i];
+            f[i + n/2] = f0[i] - w * f1[i];
+            if (invert) 
+            {
+                f[i] /= 2;
+                f[i + n/2] /= 2;
+            }   
+            w *= wn;
+        }
+        return f;
     }
+
     
     public:
 
@@ -214,53 +236,42 @@ class bigInt{
     }
 
     bigInt operator*(const bigInt& other) const {
-        auto a = *this;
-        auto b = other;
-        if(max(a.number.size(), b.number.size()) == 1)
+
+        bool sgn = (!(this->sign ^ other.sign));
+        vector<complex<double>> a(this->number.begin(), this->number.end());
+        vector<complex<double>> b(other.number.begin(), other.number.end());
+
+        int n = 1;
+        while(n < a.size() + b.size())
+            n *= 2;
+        a.resize(n);
+        b.resize(n);
+
+        auto fa = fft(a);
+        auto fb = fft(b);
+
+        for(int i = 0;i < n;i++)
         {
-            int x = a.number[0];
-            int y = b.number[0];
-            if(!a.sign)
-            x = -x;
-            if(!b.sign)
-            y = -y;
-            return bigInt(x*y);
+            fa[i]*=fb[i];
         }
-        vector<unsigned short>A, B, C, D;
-        int n = max(a.number.size(), b.number.size()) / 2;
-        for(int i=0;i<max(a.number.size(), b.number.size());i++)
+
+        auto f = fft(fa, true);
+
+        vector<unsigned short> ans;
+        int carry = 0;
+        for(int i = 0;i < n;i++)
         {
-            if(i<n)
-            {
-                if(i < a.number.size())
-                B.push_back(a.number[i]);
-                else
-                B.push_back(0);
-                if(i < b.number.size())
-                D.push_back(b.number[i]);
-                else
-                D.push_back(0);
-            }
-            else
-            {
-                if(i < a.number.size())
-                A.push_back(a.number[i]);
-                else
-                A.push_back(0);
-                if(i < b.number.size())
-                C.push_back(b.number[i]);
-                else
-                C.push_back(0);
-            }
+            int x = round(f[i].real());
+            ans.push_back((carry + x)%10);
+            carry = (carry + x)/10;
         }
-        bigInt A1 = bigInt(A, a.sign);
-        bigInt B1 = bigInt(B, a.sign);
-        bigInt C1 = bigInt(C, b.sign);
-        bigInt D1 = bigInt(D, b.sign);
-        bigInt X = (A1 + B1) * (C1 + D1);
-        bigInt Y = A1 * C1;
-        bigInt Z = B1 * D1;
-        return multiple_by_ten_power(Y, 2*n) + multiple_by_ten_power(X - Y - Z, n) + Z;
+        while(carry)
+        {
+            ans.push_back(carry % 10);
+            carry /= 10;
+        }
+        return bigInt(ans, sgn);
+
     }
 
 };
