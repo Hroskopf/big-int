@@ -1,3 +1,6 @@
+#ifndef BIGINT
+#define BIGINT
+
 #include <iostream>
 #include <vector>
 #include <algorithm>
@@ -6,22 +9,23 @@
 
 using namespace std;
 
-const double PI = acos(-1);
-
 class bigInt{
     private:
-    vector<unsigned short>number;
+    vector<int>number;
     bool sign;
+    int base = 2;
 
-    bigInt(vector<unsigned short>num, bool sgn = true) {
+    bigInt(vector<int>num, bool sgn = true, int base = 10) {
         while(num.size() > 1 and num.back() == 0)
             num.pop_back();
         number = num;
         sign = sgn;
+        if(*this == 0)
+            sign = 1;
     }
 
     vector<complex<double>> fft(vector<complex<double>> a, bool invert = false) const {
-        // from https://cp-algorithms.com/algebra/fft.html
+        // inspired by https://cp-algorithms.com/algebra/fft.html
         int n = a.size();
         if (n == 1)
             return vector<complex<double>>(1, a[0]);
@@ -35,6 +39,8 @@ class bigInt{
         auto f1 = fft(a1, invert);
 
         vector<complex<double>>f(a.size());
+
+        const double PI = acos(-1);
 
         double ang = 2 * PI / n * (invert ? -1 : 1);
         complex<double> w(1), wn(cos(ang), sin(ang));
@@ -65,25 +71,27 @@ class bigInt{
         number = {0};
         while(v)
         {
-            number.push_back(v % 10);
-            v /= 10;
+            number.push_back(v % base);
+            v /= base;
         }
     }
 
     bigInt(string s)
     {
-        if(s[0]=='-')
-            sign = 0;
-        else
-            sign = 1;
-        number = {};
-        for(int i=s.size()-1;i>=0;i--)
-        {
-            if(s[i] != '-')
-            {
-                number.push_back(s[i] - '0');
-            }
-        }
+        // TODO
+        // if(s[0]=='-')
+        //     sign = 0;
+        // else
+        //     sign = 1;
+        // number = {};
+        // base = 10;
+        // for(int i=s.size()-1;i>=0;i--)
+        // {
+        //     if(s[i] != '-')
+        //     {
+        //         number.push_back(s[i] - '0');
+        //     }
+        // }
     }
 
     friend std::ostream& operator<<(std::ostream& os, const bigInt& obj) {
@@ -140,6 +148,10 @@ class bigInt{
         return !(*this < other) and !(other < *this);
     }
 
+    bool operator!=(const bigInt&other) const {
+        return !(*this == other);
+    }
+
     bool operator>=(const bigInt&other) const {
         return !((*this) < (other));
     }
@@ -151,21 +163,24 @@ class bigInt{
     bigInt operator+(const bigInt& other) const {
         if(sign and other.sign)
         {
-            unsigned short carry = 0;
-            vector<unsigned short>result;
+            int carry = 0;
+            vector<int>result;
             for(int i = 0;i < max(number.size(), other.number.size());i++)
             {
-                unsigned short a = 0, b = 0;
+                int a = 0, b = 0;
                 if(i < number.size())
                     a = number[i];
                 if(i < other.number.size())
                     b = other.number[i];
-                unsigned short res = (a + b + carry);
-                result.push_back(res % 10);
-                carry = res/10;
+                int res = (a + b + carry);
+                result.push_back(res % base);
+                carry = res / base;
             }   
-            if(carry > 0)
-                result.push_back(carry);
+            while(carry > 0)
+            {
+                result.push_back(carry % base);
+                carry /= base;
+            }
             return bigInt(result);
         }
         else
@@ -187,7 +202,7 @@ class bigInt{
             if(*this >= other)
             {
                 bool borrow = 0;
-                vector<unsigned short>result;
+                vector<int>result;
                 for(int i = 0;i < number.size();i++)
                 {
                     int a = number[i];
@@ -200,7 +215,7 @@ class bigInt{
                     {
                         if(a == 0)
                         {
-                            a = 9;
+                            a = base - 1;
                         }
                         else
                         {
@@ -210,7 +225,7 @@ class bigInt{
                     }
                     if(a < b)
                     {
-                        a += 10;
+                        a += base;
                         borrow = true;
                     }
                     result.push_back(a - b);
@@ -235,6 +250,43 @@ class bigInt{
         return -other - (-*this);
     }
 
+    bigInt operator&(const bigInt& other) const {
+        vector<int>res;
+        for(int i = 0;i < min(other.number.size(), number.size());i++)
+        {
+            res.push_back(number[i] & other.number[i]);            
+        }
+        return bigInt(res);
+    }
+    
+    bigInt operator|(const bigInt& other) const {
+        vector<int>res;
+        for(int i = 0;i < max(other.number.size(), number.size());i++)
+        {
+            int x = 0, y = 0;
+            if(i < number.size())
+            x = number[i]; 
+            if(i < other.number.size())
+            y = other.number[i];   
+            res.push_back(x | y); 
+        }
+        return bigInt(res);
+    }
+
+    bigInt operator^(const bigInt& other) const {
+        vector<int>res;
+        for(int i = 0;i < max(other.number.size(), number.size());i++)
+        {
+            int x = 0, y = 0;
+            if(i < number.size())
+            x = number[i]; 
+            if(i < other.number.size())
+            y = other.number[i];   
+            res.push_back(x ^ y); 
+        }
+        return bigInt(res);
+    }
+
     bigInt operator*(const bigInt& other) const {
 
         bool sgn = (!(this->sign ^ other.sign));
@@ -252,35 +304,81 @@ class bigInt{
 
         for(int i = 0;i < n;i++)
         {
-            fa[i]*=fb[i];
+            fa[i] *= fb[i];
         }
 
         auto f = fft(fa, true);
 
-        vector<unsigned short> ans;
+        vector <int> ans;
         int carry = 0;
         for(int i = 0;i < n;i++)
         {
             int x = round(f[i].real());
-            ans.push_back((carry + x)%10);
-            carry = (carry + x)/10;
+            ans.push_back((carry + x) % base);
+            carry = (carry + x) / base;
         }
         while(carry)
         {
-            ans.push_back(carry % 10);
-            carry /= 10;
+            ans.push_back(carry % base);
+            carry /= base;
         }
         return bigInt(ans, sgn);
 
+    }
+
+    bigInt operator/(const bigInt& other) const {
+
+        bool sgn = (!(this->sign ^ other.sign));
+        vector<complex<double>> a(this->number.begin(), this->number.end());
+        vector<complex<double>> b(other.number.begin(), other.number.end());
+
+        int n = 1;
+        while(n < a.size() + b.size())
+            n *= 2;
+        a.resize(n);
+        b.resize(n);
+
+        auto fa = fft(a);
+        auto fb = fft(b);
+
+        for(int i = 0;i < n;i++)
+        {
+            fa[i] *= fb[i];
+        }
+
+        auto f = fft(fa, true);
+
+        vector <int> ans;
+        int carry = 0;
+        for(int i = 0;i < n;i++)
+        {
+            int x = round(f[i].real());
+            ans.push_back((carry + x) % base);
+            carry = (carry + x) / base;
+        }
+        while(carry)
+        {
+            ans.push_back(carry % base);
+            carry /= base;
+        }
+        return bigInt(ans, sgn);
+
+    }
+
+    int number_of_digits() const{
+        return number.size();
     }
 
 };
 
 bigInt pow(bigInt a, int n)
 {
-    if(n==0)
-    return 1;
-    if(n%2==0)
-    return pow(a*a, n/2);
-    return a*pow(a, n-1);
+    if(n == 0)
+        return 1;
+    if(n % 2 == 0)
+        return pow(a * a, n / 2);
+    return a * pow(a, n - 1);
+
 }
+
+#endif 
