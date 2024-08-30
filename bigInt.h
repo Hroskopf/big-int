@@ -87,7 +87,7 @@ class bigInt{
     bigInt(long long v = 0)
     {
         number = {};
-        sign = (v > 0);
+        sign = (v >= 0);
         if(v < 0)
         v = -v;
         if(v == 0)
@@ -129,6 +129,9 @@ class bigInt{
 
     bigInt operator-() const {
         auto p = *this;
+        vector<int>zero = {0};
+        if(p.number == zero)
+        return p;
         p.sign = (!p.sign);
         return p;
     }
@@ -399,6 +402,13 @@ bigInt pow(bigInt a, int n)
         return pow(a * a, n / 2);
     return a * pow(a, n - 1);
 
+}
+
+bigInt gcd(bigInt a, bigInt b)
+{
+    if(b == 0)
+    return a;
+    return gcd(b, a % b);
 }
 
 #endif 
