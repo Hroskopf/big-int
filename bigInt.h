@@ -58,6 +58,29 @@ class bigInt{
         return f;
     }
 
+    pair<bigInt, bigInt> divide(const bigInt& other) const {
+        // TODO: negatives
+        if(other == 0)
+        {
+            return {1 / 0, 1 / 0};
+        }
+
+        bigInt quotient = 0, remainder = 0;
+        for(int i = number.size() - 1;i >= 0;i--)
+        {
+            remainder = (remainder << 1);
+            quotient = (quotient << 1);
+            remainder = remainder + number[i];
+            
+            if(remainder >= other)
+            {
+                remainder = remainder - other;
+                quotient = quotient + 1;
+            }
+        }
+        return {quotient, remainder};
+    }
+
     
     public:
 
@@ -287,6 +310,30 @@ class bigInt{
         return bigInt(res);
     }
 
+    bigInt operator>>(int p) const {
+        auto res = number;
+        reverse(res.begin(), res.end());
+        for(int i = 0;i < p and res.size();i++)
+        {
+            res.pop_back();
+        }
+        if(res.size() == 0)
+        res = {0};
+        reverse(res.begin(), res.end());
+        return bigInt(res);
+    }
+
+    bigInt operator<<(int p) const {
+        auto res = number;
+        reverse(res.begin(), res.end());
+        for(int i = 0;i < p;i++)
+        {
+            res.push_back(0);
+        }
+        reverse(res.begin(), res.end());
+        return bigInt(res);
+    }
+
     bigInt operator*(const bigInt& other) const {
 
         bool sgn = (!(this->sign ^ other.sign));
@@ -328,44 +375,17 @@ class bigInt{
 
     bigInt operator/(const bigInt& other) const {
 
-        bool sgn = (!(this->sign ^ other.sign));
-        vector<complex<double>> a(this->number.begin(), this->number.end());
-        vector<complex<double>> b(other.number.begin(), other.number.end());
-
-        int n = 1;
-        while(n < a.size() + b.size())
-            n *= 2;
-        a.resize(n);
-        b.resize(n);
-
-        auto fa = fft(a);
-        auto fb = fft(b);
-
-        for(int i = 0;i < n;i++)
-        {
-            fa[i] *= fb[i];
-        }
-
-        auto f = fft(fa, true);
-
-        vector <int> ans;
-        int carry = 0;
-        for(int i = 0;i < n;i++)
-        {
-            int x = round(f[i].real());
-            ans.push_back((carry + x) % base);
-            carry = (carry + x) / base;
-        }
-        while(carry)
-        {
-            ans.push_back(carry % base);
-            carry /= base;
-        }
-        return bigInt(ans, sgn);
+        return divide(other).first;
 
     }
 
-    int number_of_digits() const{
+    bigInt operator%(const bigInt& other) const {
+
+        return divide(other).second;
+
+    }
+
+    int number_of_bits() const{
         return number.size();
     }
 
