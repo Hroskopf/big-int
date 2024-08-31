@@ -15,12 +15,13 @@ class bigInt{
     bool sign;
     int base = 2;
 
-    bigInt(vector<int>num, bool sgn = true, int base = 10) {
+    bigInt(vector<int>num, bool sgn = true, int _base = 2) {
         while(num.size() > 1 and num.back() == 0)
             num.pop_back();
         number = num;
         sign = sgn;
-        if(*this == 0)
+        base = _base;
+        if(*this == (bigInt)0)
             sign = 1;
     }
 
@@ -60,9 +61,9 @@ class bigInt{
 
     pair<bigInt, bigInt> divide(const bigInt& other) const {
         // TODO: negatives
-        if(other == 0)
+        if(other == (bigInt)0)
         {
-            return {1 / 0, 1 / 0};
+            return {1 / 0, 0};
         }
 
         bigInt quotient = 0, remainder = 0;
@@ -70,12 +71,12 @@ class bigInt{
         {
             remainder = (remainder << 1);
             quotient = (quotient << 1);
-            remainder = remainder + number[i];
+            remainder = remainder + (bigInt)number[i];
             
             if(remainder >= other)
             {
                 remainder = remainder - other;
-                quotient = quotient + 1;
+                quotient = quotient + (bigInt)1;
             }
         }
         return {quotient, remainder};
@@ -99,6 +100,20 @@ class bigInt{
         }
     }
 
+    operator int() const {
+
+        int res = 0;
+        int power_of_base = 1;
+        for(int i = 0;i < number.size();i++)
+        {
+            res += number[i] * power_of_base;
+            power_of_base = power_of_base * base;
+        }
+        if(!sign)
+        res = -res;
+        return res;
+    }
+
     bigInt(string s)
     {
         // TODO
@@ -118,12 +133,8 @@ class bigInt{
     }
 
     friend std::ostream& operator<<(std::ostream& os, const bigInt& obj) {
-        if(!obj.sign)
-        os << "-";
-        for(int i = obj.number.size() - 1;i >= 0;i--)
-        {
-            os << (int)obj.number[i];
-        }
+        string s = obj.to_decimal();
+        os << s;
         return os;
     }
 
@@ -388,8 +399,62 @@ class bigInt{
 
     }
 
+    vector<int> change_base(int _base = 10) const {
+
+        bigInt x = *this;
+        bool sgn = x.sign;
+        vector<int>res;
+        bigInt b = _base;
+        while(x != (bigInt)0)
+        {
+            res.push_back((x % b));
+            x = x / b;
+        }
+        return res;
+
+    }
+
     int number_of_bits() const{
         return number.size();
+    }
+
+    string to_bin() const {
+        string s = "";
+        if(!sign)s += '-';
+        for(int i = number.size() - 1;i>=0;i--)
+        {
+            s += ('0' + number[i]);
+        }
+        return s;
+
+    }
+
+    string to_hex() const {
+        auto d = change_base(16);
+        string s = "";
+        if(!sign)s += '-';
+        for(int i = d.size() - 1;i>=0;i--)
+        {
+            if(d[i] < 10)
+            s += ('0' + d[i]);
+            else
+            s += ('A' + d[i] - 10);
+        }
+        return s;
+
+    }
+
+    string to_decimal () const {
+        auto d = change_base(10);
+        string s = "";
+        if(!sign)s += '-';
+        for(int i = d.size() - 1;i>=0;i--)
+        {
+            if(d[i] < 10)
+            s += ('0' + d[i]);
+        }
+        return s;
+
     }
 
 };
@@ -400,13 +465,13 @@ bigInt pow(bigInt a, int n)
         return 1;
     if(n % 2 == 0)
         return pow(a * a, n / 2);
-    return a * pow(a, n - 1);
+    return a * pow(a * a, (n - 1) / 2);
 
 }
 
 bigInt gcd(bigInt a, bigInt b)
 {
-    if(b == 0)
+    if(b == (bigInt)0)
     return a;
     return gcd(b, a % b);
 }
