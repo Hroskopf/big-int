@@ -13,14 +13,14 @@ class bigInt{
     private: 
     vector<int>digits;
     bool sign;
-    int base = 2;
+    int bits = 1;
+    long long base = (1 << bits);
 
-    bigInt(vector<int>num, bool sgn = false, int _base = 2) {
+    bigInt(vector<int>num, bool sgn = false) {
         while(num.size() > 1 and num.back() == 0)
             num.pop_back();
         digits = num;
         sign = sgn;
-        base = _base;
         if(*this == (bigInt)0)
             sign = 0;
     }
@@ -58,31 +58,6 @@ class bigInt{
         }
         return f;
     }
-
-    pair<bigInt, bigInt> divide(const bigInt& other) const {
-        // O(n ^ 2) -- slow
-        // TODO: faster
-        if(other == (bigInt)0)
-        {
-            return {1 / 0, 0};
-        }
-
-        bigInt quotient = 0, remainder = 0;
-        for(int i = digits.size() - 1;i >= 0;i--)
-        {
-            remainder = (remainder << 1);
-            quotient = (quotient << 1);
-            remainder = remainder + (bigInt)digits[i];
-            
-            if(remainder >= other)
-            {
-                remainder = remainder - other;
-                quotient = quotient + (bigInt)1;
-            }
-        }
-        return {quotient, remainder};
-    }
-
     
     public:
 
@@ -329,20 +304,37 @@ class bigInt{
     bigInt operator>>(int p) const {
         auto res = digits;
         reverse(res.begin(), res.end());
-        for(int i = 0;i < p and res.size();i++)
+        for(int i = 0;i < p / bits and res.size();i++)
         {
             res.pop_back();
         }
         if(res.size() == 0)
-        res = {0};
+        return bigInt(0);
+        
+        int k = p % bits;
+        res[res.size() - 1] >>= k;
+
+        for(int i = res.size() - 2;i >= 0;i--)
+        {
+            res[i + 1] |= ((res[i] & ((1<<k) - 1))<<(bits - k));
+            res[i] >>= k;
+        }
         reverse(res.begin(), res.end());
         return bigInt(res);
     }
 
     bigInt operator<<(int p) const {
         auto res = digits;
+        res.push_back(0);
         reverse(res.begin(), res.end());
-        for(int i = 0;i < p;i++)
+        int k = p % bits;
+        for(int i = 1;i < res.size();i++)
+        {
+            res[i - 1] |= (res[i] >> (bits - k));
+            res[i] <<= k;
+            res[i] = (res[i] & ((1 << bits) - 1));
+        }
+        for(int i = 0;i < p / bits;i++)
         {
             res.push_back(0);
         }
@@ -352,9 +344,8 @@ class bigInt{
 
     bigInt operator*(const bigInt& other) const {
 
-
-        bool sgn = ((this->sign ^ other.sign));
-        vector<complex<double>> a(this->digits.begin(), this->digits.end());
+        bool sgn = ((sign ^ other.sign));
+        vector<complex<double>> a(digits.begin(), digits.end());
         vector<complex<double>> b(other.digits.begin(), other.digits.end());
 
         int n = 1;
@@ -374,16 +365,17 @@ class bigInt{
         auto f = fft(fa, true);
 
         vector <int> ans;
-        int carry = 0;
+        long long carry = 0;
         for(int i = 0;i < n;i++)
         {
-            int x = round(f[i].real());
-            ans.push_back((carry + x) % base);
-            carry = (carry + x) / base;
+            long long x = round(f[i].real());
+            ans.push_back(1ll * (carry + x) % base);
+            carry = 1ll * (carry + x) / base;
         }
+
         while(carry)
         {
-            ans.push_back(carry % base);
+            ans.push_back(1ll * carry % base);
             carry /= base;
         }
         return bigInt(ans, sgn);
@@ -392,27 +384,53 @@ class bigInt{
 
     bigInt operator/(const bigInt& other) const {
 
-        return divide(other).first;
+        bigInt div = *this;
 
-        // if(*this < other)
-        // {
-        //     return 0;
-        // }
+        if(div < other)
+        {
+            return 0;
+        }
 
-        // int n = digits.size() + 5;
-        
+
+        int n = div.number_of_bits() + other.number_of_bits();
+        bigInt power_of_two = (bigInt(1) << (n + 1));
+
+        bigInt x = div - other;
+        bigInt last = -1, before_last = -1;// two last values of x
+
+        while(x != last and x != before_last)
+        {
+            cerr << x.number_of_bits()<<endl;
+            before_last = last;
+            last = x;
+            x = ((x * (power_of_two - x * other)) >> n);
+        }
+        bigInt ans = ((div * x) >> n);
+
+        if(div - (ans * other) >= other)
+        {
+            ans = (ans + bigInt(1));
+        }
+
+        return ans;
 
     }
 
     bigInt operator%(const bigInt& other) const {
-
-        return divide(other).second;
-
+        bigInt div = *this;
+        auto x = (div / other);
+        return div - other * x;
     }
 
     vector<int> change_base(int _base = 10) const {
 
         bigInt x = *this;
+
+        if(x == bigInt(0))
+        {
+            return {0};
+        }
+
         bool sgn = x.sign;
         vector<int>res;
         bigInt b = _base;
@@ -426,7 +444,14 @@ class bigInt{
     }
 
     int number_of_bits() const{
-        return digits.size();
+        int x = digits.back();
+        int c = 0;
+        while(x)
+        {
+            c++;
+            x >>= 1;
+        }
+        return bits * (digits.size() - 1) + c;
     }
 
     string to_bin() const {
