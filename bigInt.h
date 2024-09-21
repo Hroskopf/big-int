@@ -9,6 +9,10 @@
 
 using namespace std;
 
+class bigInt;
+
+bigInt pow(bigInt a, int n);
+
 class bigInt{
     // private: 
     public:
@@ -51,6 +55,26 @@ class bigInt{
         }
         return f;
     }
+
+        vector<int>change_base(int _base, int order) const{
+
+        bigInt x = *this;
+        bigInt b = _base;
+
+        if(order == 0)
+        {
+            return x.digits;
+        }
+        
+        bigInt c = pow(b, order);
+
+        bigInt l = x % c, r = x / c;
+        vector<int>ans = l.change_base(_base, order / 2);
+        for(int i:r.change_base(_base, order / 2))
+            ans.push_back(i);
+        return ans;
+    }
+
     
     public:
 
@@ -423,27 +447,6 @@ class bigInt{
         return div - other * x;
     }
 
-    vector<int> change_base(int _base = 10) const {
-
-        bigInt x = *this;
-
-        if(x == bigInt(0))
-        {
-            return {0};
-        }
-
-        bool sgn = x.sign;
-        vector<int>res;
-        bigInt b = _base;
-        while(x != (bigInt)0)
-        {
-            res.push_back((x % b));
-            x = x / b;
-        }
-        return res;
-
-    }
-
     int number_of_bits() const{
         int x = digits.back();
         int c = 0;
@@ -453,6 +456,22 @@ class bigInt{
             x >>= 1;
         }
         return bits * (digits.size() - 1) + c;
+    }
+
+    vector<int> change_base(int _base = 10) const {
+        
+        int order = 1;
+        bigInt b = _base;        
+        bigInt x = *this;
+        while(pow(b, order + 1) <= x)
+        {
+            order = order * 2;
+        }
+
+        auto res = change_base(_base, order);
+        while(res.size() > 1 and res.back() == 0)res.pop_back();
+        return res;
+
     }
 
     string to_bin() const {
