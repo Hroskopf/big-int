@@ -10,20 +10,12 @@
 using namespace std;
 
 class bigInt{
-    private: 
+    // private: 
+    public:
     vector<int>digits;
     bool sign;
-    int bits = 1;
+    int bits = 10;
     long long base = (1 << bits);
-
-    bigInt(vector<int>num, bool sgn = false) {
-        while(num.size() > 1 and num.back() == 0)
-            num.pop_back();
-        digits = num;
-        sign = sgn;
-        if(*this == (bigInt)0)
-            sign = 0;
-    }
 
     vector<complex<double>> fft(vector<complex<double>> a, bool invert = false) const {
         // inspired by https://cp-algorithms.com/algebra/fft.html
@@ -36,6 +28,7 @@ class bigInt{
             a0[i] = a[2*i];
             a1[i] = a[2*i+1];
         }
+
         auto f0 = fft(a0, invert);
         auto f1 = fft(a1, invert);
 
@@ -60,6 +53,15 @@ class bigInt{
     }
     
     public:
+
+    bigInt(vector<int>num, bool sgn = false) {
+    while(num.size() > 1 and num.back() == 0)
+        num.pop_back();
+    digits = num;
+    sign = sgn;
+    if(*this == (bigInt)0)
+        sign = 0;
+    }
 
     bigInt(long long v = 0)
     {
@@ -363,7 +365,7 @@ class bigInt{
         }
 
         auto f = fft(fa, true);
-
+        // for(auto i:f)cerr<<i;cerr<<endl;
         vector <int> ans;
         long long carry = 0;
         for(int i = 0;i < n;i++)
@@ -400,7 +402,6 @@ class bigInt{
 
         while(x != last and x != before_last)
         {
-            cerr << x.number_of_bits()<<endl;
             before_last = last;
             last = x;
             x = ((x * (power_of_two - x * other)) >> n);
@@ -493,10 +494,16 @@ class bigInt{
 
     }
 
+    void print_digits()
+    {
+        for(int i:digits)cerr<<i<<" ";cerr<<endl;
+    }
+
 };
 
 bigInt pow(bigInt a, int n)
 {
+
     if(n == 0)
         return 1;
     if(n % 2 == 0)
