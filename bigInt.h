@@ -13,16 +13,21 @@ class bigInt;
 
 bigInt pow(bigInt a, int n);
 
+bigInt convert(vector<int>num, int _base);
+
+
 class bigInt{
-    // private: 
     public:
     vector<int>digits;
     bool sign;
-    int bits = 10;
-    long long base = (1 << bits);
+    
 
+    private: 
+
+    int bits = 10;
+    int base = (1 << bits);
     vector<complex<double>> fft(vector<complex<double>> a, bool invert = false) const {
-        // inspired by https://cp-algorithms.com/algebra/fft.html
+
         int n = a.size();
         if (n == 1)
             return vector<complex<double>>(1, a[0]);
@@ -56,11 +61,14 @@ class bigInt{
         return f;
     }
 
-        vector<int>change_base(int _base, int order) const{
+    vector<int>change_base(int _base, int order) const{
 
         bigInt x = *this;
         bigInt b = _base;
 
+        if(x < bigInt(0))
+        x = -x;
+        
         if(order == 0)
         {
             return x.digits;
@@ -75,17 +83,17 @@ class bigInt{
         return ans;
     }
 
+    bigInt(vector<int>num, bool sgn = false) {
+
+        while(num.size() > 1 and num.back() == 0)
+            num.pop_back();
+        digits = num;
+        sign = sgn;
+        if(*this == (bigInt)0)
+            sign = 0;
+    }
     
     public:
-
-    bigInt(vector<int>num, bool sgn = false) {
-    while(num.size() > 1 and num.back() == 0)
-        num.pop_back();
-    digits = num;
-    sign = sgn;
-    if(*this == (bigInt)0)
-        sign = 0;
-    }
 
     bigInt(long long v = 0)
     {
@@ -118,20 +126,17 @@ class bigInt{
 
     bigInt(string s)
     {
-        // TODO
-        // if(s[0]=='-')
-        //     sign = 0;
-        // else
-        //     sign = 1;
-        // number = {};
-        // base = 10;
-        // for(int i=s.size()-1;i>=0;i--)
-        // {
-        //     if(s[i] != '-')
-        //     {
-        //         number.push_back(s[i] - '0');
-        //     }
-        // }
+        vector<int>num;
+        int f = 0;
+        if(s[0] == '-')
+        {
+            sign = 1;
+            f++;
+        }
+        for(int i = f;i < s.size();i++)num.push_back(s[i] - '0');
+        bigInt x = convert(num, 10);
+        digits = x.digits;
+        sign = (s[0] == '-');
     }
 
     friend std::ostream& operator<<(std::ostream& os, const bigInt& obj) {
@@ -463,6 +468,8 @@ class bigInt{
         int order = 1;
         bigInt b = _base;        
         bigInt x = *this;
+        if(x < bigInt(0))
+        x = -x;
         while(pow(b, order + 1) <= x)
         {
             order = order * 2;
@@ -503,22 +510,47 @@ class bigInt{
     string to_decimal () const {
         auto d = change_base(10);
         string s = "";
-        if(sign)s += '-';
+        if(sign)s = '-';
         for(int i = d.size() - 1;i>=0;i--)
         {
             if(d[i] < 10)
-            s += ('0' + d[i]);
+                s += ('0' + d[i]);
         }
         return s;
 
     }
 
-    void print_digits()
-    {
-        for(int i:digits)cerr<<i<<" ";cerr<<endl;
-    }
-
 };
+
+inline bigInt convert_rec(vector<int>num, bigInt _base, int order)
+{
+    if(order == 1)
+    {
+        return bigInt(num[0]);
+    }
+    vector<int>l, r;
+    for(int i = 0;i < order / 2;i++)
+    l.push_back(num[i]);
+    for(int i = order / 2;i < order;i++)
+    r.push_back(num[i]);
+    bigInt L = convert_rec(l, _base, order / 2);
+    bigInt R = convert_rec(r, _base, order / 2);
+    return R + L * pow(_base, order / 2);
+}
+
+bigInt convert(vector<int>num, int _base = 10)
+{
+    // num is vector of digits of the number in given base. Most most significant bite first
+    int order = 1;
+    while(num.size() > order)
+    {
+        order *= 2;
+    }
+    reverse(num.begin(), num.end());
+    num.resize(order);
+    reverse(num.begin(), num.end());
+    return convert_rec(num, bigInt(_base), order);
+}
 
 bigInt pow(bigInt a, int n)
 {
