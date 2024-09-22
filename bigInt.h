@@ -473,6 +473,15 @@ class bigInt{
 
         bigInt div = *this;
 
+        if(div.sign and other.sign)
+        return ((-div) / (-other));
+
+        if(div.sign)
+        return -((-div) / other);
+
+        if(other.sign)
+        return - ((div) / (-other));
+
         if(div < other)
         {
             return 0;
@@ -510,9 +519,21 @@ class bigInt{
     }
 
     bigInt operator%(const bigInt& other) const {
+        if(!other.sign)
+        {
+            bigInt div = *this;
+            auto x = (div / other);
+            bigInt res = div - other * x;
+            if(res.sign)
+            res += other;
+            return res;
+        }
         bigInt div = *this;
         auto x = (div / other);
-        return div - other * x;
+        bigInt res = div - other * x;
+        if(!res.sign)
+        res += other;
+        return res;
     }
 
     bigInt& operator%=(const bigInt& other) {
