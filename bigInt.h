@@ -18,9 +18,9 @@ bigInt convert(vector<int>num, int _base);
 
 class bigInt{
     public:
+
     vector<int>digits;
     bool sign;
-    
 
     private: 
 
@@ -68,7 +68,7 @@ class bigInt{
 
         if(x < bigInt(0))
         x = -x;
-        
+
         if(order == 0)
         {
             return x.digits;
@@ -241,6 +241,20 @@ class bigInt{
         return - (-*this + (-other));
     }
 
+    bigInt& operator+=(const bigInt& other) {
+        bigInt res = (*this) + other;
+        digits = res.digits;          
+        sign = res.sign;
+        return *this;                  
+    }
+
+    bigInt& operator++() {
+        bigInt res = (*this) + bigInt(1);
+        digits = res.digits;          
+        sign = res.sign;
+        return *this;                  
+    }
+
     bigInt operator-(const bigInt& other) const {
         if(!sign and !other.sign)
         {
@@ -295,6 +309,20 @@ class bigInt{
         return -other - (-*this);
     }
 
+    bigInt& operator-=(const bigInt& other) {
+        bigInt res = (*this) - other;
+        digits = res.digits;          
+        sign = res.sign;
+        return *this;                  
+    }
+
+    bigInt& operator--() {
+        bigInt res = (*this) - bigInt(1);
+        digits = res.digits;          
+        sign = res.sign;
+        return *this;                  
+    }
+
     bigInt operator&(const bigInt& other) const {
         vector<int>res;
         for(int i = 0;i < min(other.digits.size(), digits.size());i++)
@@ -302,6 +330,13 @@ class bigInt{
             res.push_back(digits[i] & other.digits[i]);            
         }
         return bigInt(res);
+    }
+
+    bigInt& operator&=(const bigInt& other) {
+        bigInt res = ((*this) & other);
+        digits = res.digits;          
+        sign = res.sign;
+        return *this;                  
     }
     
     bigInt operator|(const bigInt& other) const {
@@ -318,6 +353,13 @@ class bigInt{
         return bigInt(res);
     }
 
+    bigInt& operator|=(const bigInt& other) {
+        bigInt res = ((*this) | other);
+        digits = res.digits;          
+        sign = res.sign;
+        return *this;                  
+    }
+
     bigInt operator^(const bigInt& other) const {
         vector<int>res;
         for(int i = 0;i < max(other.digits.size(), digits.size());i++)
@@ -330,6 +372,13 @@ class bigInt{
             res.push_back(x ^ y); 
         }
         return bigInt(res);
+    }
+
+    bigInt& operator^=(const bigInt& other) {
+        bigInt res = ((*this) ^ other);
+        digits = res.digits;          
+        sign = res.sign;
+        return *this;                  
     }
 
     bigInt operator>>(int p) const {
@@ -413,6 +462,13 @@ class bigInt{
 
     }
 
+    bigInt& operator*=(const bigInt& other) {
+        bigInt res = ((*this) * other);
+        digits = res.digits;          
+        sign = res.sign;
+        return *this;                  
+    }
+
     bigInt operator/(const bigInt& other) const {
 
         bigInt div = *this;
@@ -423,7 +479,7 @@ class bigInt{
         }
 
 
-        int n = div.number_of_bits() + other.number_of_bits();
+        int n = div.pop_count() + other.pop_count();
         bigInt power_of_two = (bigInt(1) << (n + 1));
 
         bigInt x = div - other;
@@ -446,13 +502,27 @@ class bigInt{
 
     }
 
+    bigInt& operator/=(const bigInt& other) {
+        bigInt res = ((*this) / other);
+        digits = res.digits;          
+        sign = res.sign;
+        return *this;                  
+    }
+
     bigInt operator%(const bigInt& other) const {
         bigInt div = *this;
         auto x = (div / other);
         return div - other * x;
     }
 
-    int number_of_bits() const{
+    bigInt& operator%=(const bigInt& other) {
+        bigInt res = ((*this) % other);
+        digits = res.digits;          
+        sign = res.sign;
+        return *this;                  
+    }
+
+    int pop_count() const{
         int x = digits.back();
         int c = 0;
         while(x)
