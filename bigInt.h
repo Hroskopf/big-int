@@ -110,20 +110,6 @@ class bigInt{
         }
     }
 
-    operator int() const {
-
-        int res = 0;
-        int power_of_base = 1;
-        for(int i = 0;i < digits.size();i++)
-        {
-            res += digits[i] * power_of_base;
-            power_of_base = power_of_base * base;
-        }
-        if(sign)
-        res = -res;
-        return res;
-    }
-
     bigInt(string s)
     {
         vector<int>num;
@@ -403,6 +389,13 @@ class bigInt{
         return bigInt(res);
     }
 
+    bigInt& operator>>=(int k) {
+        bigInt res = ((*this) >> k);
+        digits = res.digits;          
+        sign = res.sign;
+        return *this;                  
+    }
+
     bigInt operator<<(int p) const {
         auto res = digits;
         res.push_back(0);
@@ -420,6 +413,13 @@ class bigInt{
         }
         reverse(res.begin(), res.end());
         return bigInt(res);
+    }
+
+    bigInt& operator<<=(int k) {
+        bigInt res = ((*this) << k);
+        digits = res.digits;          
+        sign = res.sign;
+        return *this;                  
     }
 
     bigInt operator*(const bigInt& other) const {
@@ -443,7 +443,6 @@ class bigInt{
         }
 
         auto f = fft(fa, true);
-        // for(auto i:f)cerr<<i;cerr<<endl;
         vector <int> ans;
         long long carry = 0;
         for(int i = 0;i < n;i++)
@@ -645,7 +644,6 @@ bigInt convert(vector<int>num, int _base = 10)
 
 bigInt pow(bigInt a, int n)
 {
-
     if(n == 0)
         return 1;
     if(n % 2 == 0)
