@@ -115,7 +115,14 @@ Complexity: O(n).
 
 The standart Euclidean algorithm.
 
-COmplexity: O(n^2 * log n).
+Complexity: O(n^2 * log n).
 
+## Used sources:
 
+https://seriouscomputerist.atariverse.com/media/pdf/book/Art%20of%20Computer%20Programming%20-%20Volume%202%20(Seminumerical%20Algorithms).pdf
 
+https://stackoverflow.com/questions/27801397/newton-raphson-division-with-big-integers
+
+https://codeforces.com/blog/entry/95047
+
+https://cp-algorithms.com/algebra/fft.html
