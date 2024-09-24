@@ -70,6 +70,8 @@ Complexity: O(n * log^2 n).
 
 Just used the division algorithm and return a % b = a - (a / b) * b.
 
+For b < 0 -- the a % b would be non-positive. In other case a % b >= 0.
+
 Complexity: O(n * log^2 n).
 
 ## Power (pow)
