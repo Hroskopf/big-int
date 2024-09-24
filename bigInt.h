@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <complex>
 #include <math.h>
+#include <stdexcept>
 
 using namespace std;
 
@@ -80,6 +81,8 @@ class bigInt{
         vector<int>ans = l.change_base(_base, order / 2);
         for(int i:r.change_base(_base, order / 2))
             ans.push_back(i);
+
+        reverse(ans.begin(), ans.end());
         return ans;
     }
 
@@ -470,6 +473,9 @@ class bigInt{
 
     bigInt operator/(const bigInt& other) const {
 
+        if(other == 0)
+            throw runtime_error("Division by zero exception");
+
         bigInt div = *this;
 
         if(div.sign and other.sign)
@@ -572,11 +578,12 @@ class bigInt{
     }
 
     string to_bin() const {
+        auto d = change_base(2);
         string s = "";
         if(sign)s += '-';
-        for(int i = digits.size() - 1;i>=0;i--)
+        for(int i = 0;i < d.size();i++)
         {
-            s += ('0' + digits[i]);
+            s += ('0' + d[i]);
         }
         return s;
 
@@ -586,7 +593,7 @@ class bigInt{
         auto d = change_base(16);
         string s = "";
         if(sign)s += '-';
-        for(int i = d.size() - 1;i>=0;i--)
+        for(int i = 0;i < d.size();i++)
         {
             if(d[i] < 10)
             s += ('0' + d[i]);
@@ -601,7 +608,7 @@ class bigInt{
         auto d = change_base(10);
         string s = "";
         if(sign)s = '-';
-        for(int i = d.size() - 1;i>=0;i--)
+        for(int i = 0;i < d.size();i++)
         {
             if(d[i] < 10)
                 s += ('0' + d[i]);
@@ -612,7 +619,7 @@ class bigInt{
 
 };
 
-inline bigInt convert_rec(vector<int>num, bigInt _base, int order)
+bigInt convert_rec(vector<int>num, bigInt _base, int order)
 {
     if(order == 1)
     {
