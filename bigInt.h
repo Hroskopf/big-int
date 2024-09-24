@@ -82,7 +82,6 @@ class bigInt{
         for(int i:r.change_base(_base, order / 2))
             ans.push_back(i);
 
-        reverse(ans.begin(), ans.end());
         return ans;
     }
 
@@ -573,6 +572,7 @@ class bigInt{
 
         auto res = change_base(_base, order);
         while(res.size() > 1 and res.back() == 0)res.pop_back();
+        reverse(res.begin(), res.end());
         return res;
 
     }
